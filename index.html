@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Environment URLs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .table-fixed {
+            table-layout: fixed;
+        }
+        .w-2\/5 {
+            width: 40%;
+        }
+        .w-3\/5 {
+            width: 60%;
+        }
+    </style>
+</head>
+<body class="font-sans p-8">
+    <!-- Banner -->
+    <div class="border-double border-2 text-black py-4 px-4">
+        <div class="max-w-6xl mx-auto">
+            <h1 class="text-4xl font-bold text-center">Application Environment URLs</h1>
+            <p class="text-xl text-center mt-2 text-gray-600">Select an environment to view application URLs</p>
+        </div>
+    </div>
+
+    <!-- Dropdown -->
+    <div class="max-w-6xl mx-auto p-2 items-center flex justify-center">
+        <label class="block text-lg font-medium text-gray-700 mb-2">
+            Select Environment:
+            <select id="environmentSelect" class="ml-4 p-2 border border-gray-300 rounded" onchange="updateUrls()">
+                <option value="">--Choose an option--</option>
+                <option value="QA">QA</option>
+                <option value="UAT">UAT</option>
+                <option value="DEV">DEV</option>
+                <option value="PROD">PROD</option>
+            </select>
+        </label>
+    </div>
+
+    <!-- Table -->
+    <div id="tableContainer" class="" style="display: none;">
+        <table class="min-w-full bg-white border border-gray-300 table-fixed">
+            <colgroup>
+                <col class="w-2/5" />
+                <col class="w-3/5" />
+            </colgroup>
+            <thead>
+                <tr>
+                    <th class="py-2 px-4 border-b border-r border-gray-300 text-left">Application Name</th>
+                    <th class="py-2 px-4 border-b border-gray-300 text-left">URL</th>
+                </tr>
+            </thead>
+            <tbody id="applicationTable">
+                <!-- Table rows will be populated by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        let applications = [];
+        async function loadApplications() {
+            try {
+                const response = await fetch('applications-url.json');
+                const data = await response.json();
+                applications = data.applications;
+                updateUrls(); // Initial load
+            } catch (error) {
+                console.error('Error fetching applications:', error);
+            }
+        }
+        function getModifiedUrl(originalUrl, environment) {
+            if (!environment || environment === 'PROD') return originalUrl;
+            
+            try {
+                const url = new URL(originalUrl);
+                let hostname = url.hostname;
+
+                if (hostname.startsWith('www.')) {
+                    const domainWithoutWww = hostname.substring(4);
+                    switch (environment) {
+                        case 'QA':
+                            hostname = 'www.tst-' + domainWithoutWww;
+                            break;
+                        case 'UAT':
+                            hostname = 'www.stg-' + domainWithoutWww;
+                            break;
+                        case 'DEV':
+                            hostname = 'www.dev-' + domainWithoutWww;
+                            break;
+                        default:
+                            return originalUrl;
+                    }
+                } else {
+                    switch (environment) {
+                        case 'QA':
+                            hostname = 'tst-' + hostname;
+                            break;
+                        case 'UAT':
+                            hostname = 'stg-' + hostname;
+                            break;
+                        case 'DEV':
+                            hostname = 'dev-' + hostname;
+                            break;
+                        default:
+                            return originalUrl;
+                    }
+                }
+                
+                url.hostname = hostname;
+                return url.toString();
+            } catch (error) {
+                return originalUrl;
+            }
+        }
+
+        function updateUrls() {
+            const environmentSelect = document.getElementById('environmentSelect');
+            const tableBody = document.getElementById('applicationTable');
+            const tableContainer = document.getElementById('tableContainer');
+            const selectedEnvironment = environmentSelect.value;
+            
+            tableBody.innerHTML = '';
+            
+            if (!selectedEnvironment) {
+                tableContainer.style.display = 'none';
+                return;
+            }
+            
+            tableContainer.style.display = 'block';
+            applications.forEach((app, index) => {
+                const modifiedUrl = getModifiedUrl(app.url, selectedEnvironment);
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-100';
+                
+                row.innerHTML = `
+                    <td class="py-2 px-4 border-b border-r border-gray-300">${app.name}</td>
+                    <td class="py-2 px-4 border-b border-gray-300">
+                        <a href="${modifiedUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">${modifiedUrl}</a>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', loadApplications);
+    </script>
+</body>
+</html>

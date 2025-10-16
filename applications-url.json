@@ -1,0 +1,24 @@
+{
+  "applications": [
+    {
+      "name": "Google",
+      "url": "https://www.google.com"
+    },
+    {
+      "name": "GitHub",
+      "url": "https://www.github.com"
+    },
+    {
+      "name": "Stack Overflow",
+      "url": "https://stackoverflow.com"
+    },
+    {
+      "name": "Reddit",
+      "url": "https://www.reddit.com"
+    },
+    {
+      "name": "Example App",
+      "url": "https://www.example.com"
+    }
+  ]
+}
